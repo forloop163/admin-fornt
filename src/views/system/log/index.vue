@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input v-model.trim="listQuery.name" placeholder="角色名称" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
+      <el-input v-model.trim="listQuery.name" placeholder="用户名称" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
         搜索
       </el-button>
@@ -24,7 +24,7 @@
       />
       <el-table-column label="用户名称">
         <template slot-scope="scope">
-          {{ scope.row.user.username }}
+          {{ scope.row.user ? scope.row.user.username : "" }}
         </template>
       </el-table-column>
       <el-table-column
