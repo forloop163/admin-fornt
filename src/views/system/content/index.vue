@@ -1,10 +1,8 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input v-model.trim="listQuery.name" placeholder="角色名称" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
-      <el-select v-model="listQuery.active" placeholder="角色状态" clearable style="width: 200px" class="filter-item">
-        <el-option v-for="active in actives" :key="active.value" :label="active.label" :value="active.value" />
-      </el-select>
+      <el-input v-model.trim="listQuery.name" placeholder="名称" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
+      <el-input v-model.trim="listQuery.name" placeholder="表名" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
         搜索
       </el-button>
@@ -32,18 +30,17 @@
       />
       <el-table-column
         prop="name"
-        label="角色名称"
+        label="名称"
+      />
+      <el-table-column
+        prop="table_name"
+        label="表名"
+        width="300px"
       />
       <el-table-column
         prop="desc"
-        width="500px"
         label="描述"
       />
-      <el-table-column label="状态">
-        <template slot-scope="scope">
-          {{ scope.row.active | statusFilter }}
-        </template>
-      </el-table-column>
       <el-table-column label="操作" align="center" width="230" class-name="small-padding fixed-width">
         <template slot-scope="{row}">
           <el-button type="primary" size="mini" @click="handleUpdate(row)">
@@ -52,11 +49,8 @@
           <el-button type="danger" size="mini" @click="handleDelete(row)">
             删除
           </el-button>
-          <el-button v-if="row.active!=1" size="mini" type="success" @click="handleResetRole(row,'published')">
-            恢复
-          </el-button>
-          <el-button v-if="row.active==1" size="mini" @click="handleFreezeRole(row,'draft')">
-            冻结
+          <el-button type="success" size="mini" @click="handleConfig(row.id)">
+            配置
           </el-button>
         </template>
       </el-table-column>
@@ -77,8 +71,12 @@
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="80px">
-        <el-form-item label="角色名称" prop="name">
+        <el-form-item label="名称" prop="name">
           <el-input v-model="temp.name" />
+        </el-form-item>
+        <el-form-item label="表名" prop="table_name">
+          <el-input v-if="dialogStatus==='update'" v-model="temp.table_name" disabled />
+          <el-input v-if="dialogStatus==='create'" v-model="temp.table_name" />
         </el-form-item>
         <el-form-item label="描述" prop="desc">
           <el-input
@@ -89,11 +87,6 @@
             placeholder="描述内容"
             show-word-limit
           />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="temp.active" placeholder="角色状态" style="width: 200px" class="filter-item">
-            <el-option v-for="active in actives" :key="active.value" :label="active.label" :value="active.value" />
-          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -109,27 +102,12 @@
 </template>
 
 <script>
-import { fetchList, createRole, updateRole, deleteRole, resetRole, freezeRole } from '@/api/role'
+import { fetchList, createContent, updateContent, deleteContent } from '@/api/content'
 import waves from '@/directive/waves' // waves directive
 
-const actives = [
-  { value: 0, label: '禁用' },
-  { value: 1, label: '正常' }
-]
-
 export default {
-  name: 'Role',
+  name: 'Content',
   directives: { waves },
-  filters: {
-    statusFilter(status) {
-      /* eslint-disable */ 
-      const statusMap = {
-        0: '禁用',
-        1: '正常'
-      }
-      return statusMap[status]
-    }
-  },
   data() {
     return {
       tableKey: 0,
@@ -141,12 +119,12 @@ export default {
         page: 1,
         pageSize: 20
       },
-      actives,
       temp: {
         id: undefined,
         name: '',
+        table_name: '',
         desc: '',
-        active: 1
+        created_by: 0
       },
       dialogFormVisible: false,
       dialogStatus: '',
@@ -155,7 +133,8 @@ export default {
         create: '新增'
       },
       rules: {
-        name: [{ required: true, message: '角色名称必须填写', trigger: 'change' }],
+        name: [{ required: true, message: '名称必须填写', trigger: 'change' }],
+        table_name: [{ required: true, message: '表名必须填写', trigger: 'change' }],
         desc: [{ max: 200, message: '长度200个字符以内', trigger: 'blur' }]
       }
     }
@@ -185,13 +164,6 @@ export default {
       this.listQuery.page = val
       this.getList()
     },
-    handleModifyStatus(row, status) {
-      this.$message({
-        message: '操作Success',
-        type: 'success'
-      })
-      row.status = status
-    },
     sortChange({ order, prop }) {
       this.listQuery.sort = { order, prop }
       this.handleFilter()
@@ -215,7 +187,7 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          createRole(this.temp).then(() => {
+          createContent(this.temp).then(() => {
             this.dialogFormVisible = false
             this.$notify({
               title: '通知',
@@ -246,7 +218,7 @@ export default {
     updateData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          updateRole(this.temp.id, this.temp).then(() => {
+          updateContent(this.temp.id, this.temp).then(() => {
             this.dialogFormVisible = false
             this.$notify({
               title: '通知',
@@ -265,7 +237,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        deleteRole(row.id).then(response => {
+        deleteContent(row.id).then(response => {
           this.$notify({
             title: '通知',
             message: '操作成功',
@@ -283,41 +255,8 @@ export default {
         })
       })
     },
-    handleResetRole(row) {
-      resetRole(row.id).then(response => {
-        this.$notify({
-          title: '通知',
-          message: '操作成功',
-          type: 'success',
-          duration: 2000
-        })
-        this.getList()
-      }).catch(() => {
-        this.$notify({
-          title: '通知',
-          message: '操作失败',
-          type: 'danger',
-          duration: 2000
-        })
-      })
-    },
-    handleFreezeRole(row) {
-      freezeRole(row.id).then(response => {
-        this.$notify({
-          title: '通知',
-          message: '操作成功',
-          type: 'success',
-          duration: 2000
-        })
-        this.getList()
-      }).catch(() => {
-        this.$notify({
-          title: '通知',
-          message: '操作失败',
-          type: 'danger',
-          duration: 2000
-        })
-      })
+    handleConfig(id) {
+      this.$router.push({ path: `/system/content/show`, query: { id: id }})
     }
   }
 }

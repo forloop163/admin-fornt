@@ -31,7 +31,7 @@ service.interceptors.response.use(
     const res = response.data
     if (res.code !== 200) {
       // HTTP_UNAUTHORIZED
-      if (res.code === 401) {
+      if (res.code === 410) {
         MessageBox.confirm('您已经登出, 点击取消将留在当前页面, 否则将重新登陆', '确定登出', {
           confirmButtonText: '重新登陆',
           cancelButtonText: '取消',

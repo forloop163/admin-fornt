@@ -331,13 +331,15 @@ export default {
       this.dialogFormVisible = false
     },
     onSelectRole(val) {
-      if (this.activeName === 'second') {
+      if (val && this.activeName === 'second') {
         this.secondLoading = true
         fetchRole(val).then(response => {
           const ids = _.pluck(response.data.permissions, 'id')
           this.$refs.tree.setCheckedKeys(ids)
           this.secondLoading = false
         })
+      } else {
+        this.$refs.tree.setCheckedKeys([])
       }
     },
     onSaveRolePermission() {
